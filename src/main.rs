@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
     let res = client
         .post("https://api.openai.com/v1/engines/text-davinci-001/completions")
-        .bearer_auth(std::fs::read_to_string("api_key")?)
+        .bearer_auth(std::fs::read_to_string("./src/api_key")?)
         .header("Content-Type", "application/json")
         .body(serde_json::to_string(&req).unwrap())
         .send()
