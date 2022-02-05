@@ -1,42 +1,7 @@
-#![allow(dead_code)]
-use std::io::Write;
-
-use serde::{Deserialize, Serialize};
+mod structs;
 use spinners::{utils::spinner_names, Spinner};
-
-#[derive(Serialize, Debug)]
-struct Request {
-    prompt: String,
-    max_tokens: usize,
-    temperature: f32,
-    n: u8,
-}
-
-#[derive(Deserialize, Debug)]
-struct Response {
-    id: Option<String>,
-    object: Option<String>,
-    created: Option<usize>,
-    model: Option<String>,
-    choices: Vec<Choice>,
-}
-
-#[derive(Deserialize, Debug)]
-struct Choice {
-    text: String,
-    index: usize,
-    logprobs: Option<isize>,
-    finish_reason: String,
-}
-
-impl Default for Choice {
-    fn default() -> Self {
-        Choice {
-            text: "...".to_string(),
-            ..Default::default()
-        }
-    }
-}
+use std::io::Write;
+use structs::{Request, Response};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
