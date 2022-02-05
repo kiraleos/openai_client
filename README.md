@@ -1,5 +1,7 @@
-# Simple OpenAI client
-A simple OpenAI client written in Rust. It works by making HTTP requests to OpenAI's API and consuming the results.
+# OpenAI Client
+A simple OpenAI (GPT-3) client written in Rust. It works by making HTTP requests to OpenAI's API and consuming the results.
+
+Uses `reqwest` for the HTTP requests, `tokio` for the async functionality and `serde` for object serialization/deserialization.
 ## Installation and Usage
 ```
 git clone https://github.com/kiraleos/openai_client.git
