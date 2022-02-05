@@ -1,50 +1,23 @@
 #![allow(dead_code)]
+use std::io::Write;
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use spinners::{utils::spinner_names, Spinner};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 struct Request {
-    prompt: Option<String>,
-    max_tokens: Option<usize>,
-    temperature: Option<f32>,
-    top_p: Option<f32>,
-    n: Option<usize>,
-    stream: Option<bool>,
-    logprobs: Option<usize>,
-    echo: Option<bool>,
-    stop: Option<Vec<String>>,
-    presence_penalty: Option<f32>,
-    frequency_penalty: Option<f32>,
-    best_of: Option<usize>,
-    logit_bias: Option<HashMap<String, isize>>,
-}
-
-impl Default for Request {
-    fn default() -> Self {
-        Request {
-            prompt: None,
-            max_tokens: Some(16),
-            temperature: Some(1.0),
-            top_p: Some(1.0),
-            n: Some(1),
-            stream: Some(false),
-            logprobs: None,
-            echo: Some(false),
-            stop: None,
-            presence_penalty: Some(0.0),
-            frequency_penalty: Some(0.0),
-            best_of: Some(1),
-            logit_bias: Some(HashMap::new()),
-        }
-    }
+    prompt: String,
+    max_tokens: usize,
+    temperature: f32,
+    n: u8,
 }
 
 #[derive(Deserialize, Debug)]
 struct Response {
-    id: String,
-    object: String,
-    created: usize,
-    model: String,
+    id: Option<String>,
+    object: Option<String>,
+    created: Option<usize>,
+    model: Option<String>,
     choices: Vec<Choice>,
 }
 
@@ -56,35 +29,58 @@ struct Choice {
     finish_reason: String,
 }
 
+impl Default for Choice {
+    fn default() -> Self {
+        Choice {
+            text: "...".to_string(),
+            ..Default::default()
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let prompt = {
-        let mut args = std::env::args();
-        args.next();
-        args.next().unwrap_or_else(|| "".to_string())
-    };
-
-    let req = Request {
-        prompt: Some(prompt),
-        ..Default::default()
-    };
+    let url =
+        "https://api.openai.com/v1/engines/text-davinci-001/completions";
 
     let client = reqwest::Client::new();
-    let res = client
-        .post("https://api.openai.com/v1/engines/text-davinci-001/completions")
-        .bearer_auth(std::fs::read_to_string("./src/api_key")?)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&req).unwrap())
-        .send()
-        .await?
-        .text()
-        .await?;
+    let token = std::fs::read_to_string("./api_key")?;
+    print!("{esc}c", esc = 27 as char);
+    println!("OpenAI is ready. Ask it anything. Press Ctrl-C to quit.");
+    loop {
+        print!("> ");
+        std::io::stdout().flush()?;
+        let mut prompt = String::new();
+        std::io::stdin().read_line(&mut prompt)?;
+        std::io::stdout().flush()?;
 
-    let res: Response = serde_json::from_str(&res).unwrap();
+        let spinner = Spinner::new(
+            &spinner_names::SpinnerNames::Dots,
+            "OpenAI is typing...".to_string(),
+        );
 
-    for choice in res.choices {
-        println!("{}", choice.text);
+        let req = Request {
+            prompt,
+            max_tokens: 64,
+            n: 1,
+            temperature: 0.8,
+        };
+
+        let res = client
+            .post(url)
+            .bearer_auth(&token)
+            .header("Content-Type", "application/json")
+            .json(&req)
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        spinner.stop();
+
+        let res: Response = serde_json::from_str(&res)?;
+        if let Some(choice) = res.choices.get(0) {
+            println!("{}", choice.text)
+        }
     }
-
-    Ok(())
 }
