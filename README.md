@@ -3,7 +3,7 @@ A simple OpenAI (GPT-3) client written in Rust. It works by making HTTP requests
 
 Uses `reqwest` for the HTTP requests, `tokio` for the async functionality and `serde` for object serialization/deserialization.
 ## Installation and Usage
-You need an API key for this to work. If you have one, place the key on a file named `api_key` in the project root folder. 
+You need an API key for this to work. If you have one, place the key in a file named `api_key` in the project root folder. 
 ```
 git clone https://github.com/kiraleos/openai_client.git
 cd openai_client
